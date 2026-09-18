@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFL Football Pool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Libre+Franklin:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F4EF;
+    --ink:#1A1A18;
+    --ink-2:#4A4A46;
+    --ink-3:#8C8C85;
+    --rule:#CFCCC2;
+    --rule-hard:#1A1A18;
+    --accent:#B3251E;
+    --shade:#E9E7DF;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Libre Franklin',system-ui,-apple-system,sans-serif;
+    font-size:19px;line-height:1.45;
+    font-variant-numeric:tabular-nums;
+  }
+  .wrap{max-width:660px;margin:0 auto;padding:0 18px 72px}
+
+  /* ---- masthead ---- */
+  .mast{border-bottom:4px solid var(--rule-hard);padding-top:26px}
+  .mast .kicker{
+    font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--accent);
+  }
+  .mast h1{
+    font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;
+    font-size:clamp(38px,12vw,62px);line-height:.92;letter-spacing:-.005em;margin:6px 0 10px;
+  }
+  .mast .strap{
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    border-top:1px solid var(--rule);padding:8px 0 10px;font-size:15px;color:var(--ink-2);
+  }
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);
+    margin-right:6px;vertical-align:1px}
+  .dot.off{background:var(--ink-3)}
+
+  /* ---- week tabs ---- */
+  nav{display:flex;gap:0;overflow-x:auto;border-bottom:2px solid var(--rule-hard);
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{
+    font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;padding:14px 16px;min-height:48px;cursor:pointer;white-space:nowrap;
+    background:transparent;border:0;border-bottom:4px solid transparent;
+    margin-bottom:-2px;color:var(--ink-3);
+  }
+  nav button[aria-current=true]{color:var(--ink);border-bottom-color:var(--accent)}
+  button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+  /* ---- section heads ---- */
+  h2{
+    font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;letter-spacing:.16em;
+    text-transform:uppercase;margin:34px 0 0;padding-bottom:7px;border-bottom:2px solid var(--rule-hard);
+  }
+  .sub{font-size:15px;color:var(--ink-2);margin:8px 0 0}
+
+  /* ---- standings ---- */
+  .board{margin:0;padding:0;list-style:none}
+  .row{border-bottom:1px solid var(--rule)}
+  .row.lead{background:var(--shade)}
+  .row.dead .nm,.row.dead .rec{color:var(--ink-3)}
+  .row > summary{
+    display:flex;align-items:center;gap:12px;padding:13px 4px;min-height:48px;
+    cursor:pointer;list-style:none;
+  }
+  .row > summary::-webkit-details-marker{display:none}
+  .rank{
+    font-family:'Oswald',sans-serif;font-size:19px;font-weight:600;color:var(--ink-3);
+    width:28px;flex:0 0 28px;text-align:right;
+  }
+  .nm{font-weight:700;font-size:20px;flex:1;min-width:0;letter-spacing:-.01em}
+  .tag{
+    font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);
+    padding:1px 5px;margin-left:8px;vertical-align:2px;
+  }
+  .tag.out{color:var(--ink-3);border-color:var(--ink-3)}
+  .rec{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;letter-spacing:.01em}
+  .live{font-size:14px;color:var(--accent);width:34px;text-align:right;font-weight:600}
+  .caret{width:16px;flex:0 0 16px;color:var(--ink-3);font-size:14px}
+  .row[open] .caret{transform:rotate(90deg)}
+
+  /* ---- expanded picks ---- */
+  .picks{padding:2px 4px 18px 44px}
+  .pk{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-top:1px solid var(--rule);font-size:17px}
+  .pk .mark{
+    font-family:'Oswald',sans-serif;font-weight:700;font-size:15px;width:20px;flex:0 0 20px;
+  }
+  .pk.w .mark{color:var(--ink)}
+  .pk.l{color:var(--ink-3)}
+  .pk.p .mark{color:var(--ink-3)}
+  .pk .g{flex:1;color:var(--ink-2);font-size:15px}
+  .pk .t{font-weight:700}
+  .pk.l .t{font-weight:500}
+  .tbline{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);
+    font-size:15px;color:var(--ink-2)}
+
+  /* ---- tiebreakers ---- */
+  .tb{border-bottom:1px solid var(--rule);padding:16px 4px}
+  .tb .ttl{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-2)}
+  .tb .gm{font-size:15px;color:var(--ink-3);margin-bottom:6px}
+  .tb .big{font-family:'Oswald',sans-serif;font-size:52px;font-weight:700;line-height:1}
+  .tb .big span{font-size:17px;font-weight:500;color:var(--ink-2);margin-left:10px;letter-spacing:.02em}
+  .tb ol{margin:12px 0 0;padding:0;list-style:none}
+  .tb li{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--rule);font-size:17px}
+  .tb li.top{font-weight:700}
+  .tb li .n{flex:1}
+  .tb li .v{font-family:'Oswald',sans-serif;font-weight:600}
+  .tb li .d{color:var(--ink-3);font-size:15px;width:74px;text-align:right}
+
+  /* ---- season ---- */
+  .st{width:100%;border-collapse:collapse}
+  .st th{font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-2);text-align:right;padding:10px 6px;
+    border-bottom:2px solid var(--rule-hard)}
+  .st th:first-child{text-align:left}
+  .st td{padding:12px 6px;text-align:right;border-bottom:1px solid var(--rule);font-size:18px}
+  .st td:first-child{text-align:left;font-weight:700;font-size:19px}
+  .st td.big{font-family:'Oswald',sans-serif;font-size:21px;font-weight:600}
+  .st tr.lead{background:var(--shade)}
+
+  .foot{margin-top:38px;padding-top:14px;border-top:1px solid var(--rule);
+    font-size:14px;color:var(--ink-3);line-height:1.6}
+  .empty{padding:50px 10px;text-align:center;color:var(--ink-3)}
+
+  @media (min-width:620px){
+    .rec{font-size:29px}
+    .nm{font-size:22px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mast">
+  <div class="kicker">2026&ndash;27 Season</div>
+  <h1>NFL Football Pool</h1>
+  <div class="strap">
+    <span id="strapL">Loading&hellip;</span>
+    <span id="strapR"><span class="dot off"></span>Scores stored</span>
+  </div>
+</div>
+
+<nav id="nav"></nav>
+<div id="body"><div class="empty">Loading&hellip;</div></div>
+
+<div class="foot">
+  Most wins takes the week. A point goes to whoever lands closest to Monday night total points
+  and closest to 49ers total yards.
+</div>
+
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const FALLBACK = {
+ "season": "2026-27",
+ "weeks": {
+  "1": {
+   "label": "Week 1",
+   "games": [
+    "NE @ SEA",
+    "SF @ LAR",
+    "TB @ CIN",
+    "NO @ DET",
+    "NYJ @ TEN",
+    "BAL @ IND",
+    "ATL @ PIT",
+    "CHI @ CAR",
+    "CLE @ JAX",
+    "BUF @ HOU",
+    "MIA @ LV",
+    "GB @ MIN",
+    "WAS @ PHL",
+    "AZ @ LAC",
+    "DAL @ NYG",
+    "DEN @ KC"
+   ],
+   "entries": [
+    "JJK",
+    "KEF",
+    "BAM",
+    "EMH",
+    "CBS",
+    "JLS",
+    "SNL",
+    "JMM",
+    "CJA",
+    "ERB",
+    "HBL",
+    "A&M",
+    "K&C",
+    "LMH",
+    "LVS",
+    "CMA",
+    "R&J",
+    "T&J",
+    "CAK",
+    "GLJ"
+   ],
+   "picks": {
+    "JJK": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CAR",
+     "JAX",
+     "HOU",
+     "LV",
+     "GB",
+     "PHL",
+     "LAC",
+     "NYG",
+     "KC"
+    ],
+    "KEF": [
+     "SEA",
+     "SF",
+     "TB",
+     "DET",
+     "TEN",
+     "IND",
+     "ATL",
+     "CHI",
+     "JAX",
+     "HOU",
+     "MIA",
+     "MIN",
+     "PHL",
+     "LAC",
+     "DAL",
+     "DEN"
+    ],
+    "BAM": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "IND",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "MIA",
+     "GB",
+     "PHL",
+     "LAC",
+     "NYG",
+     "DEN"
+    ],
+    "EMH": [
+     "NE",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "GB",
+     "PHL",
+     "LAC",
+     "DAL",
+     "KC"
+    ],
+    "CBS": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "IND",
+     "PIT",
+     "CAR",
+     "JAX",
+     "HOU",
+     "LV",
+     "MIN",
+     "PHL",
+     "LAC",
+     "NYG",
+     "KC"
+    ],
+    "JLS": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "NYJ",
+     "BAL",
+     "PIT",
+     "CHI",
+     "CLE",
+     "BUF",
+     "MIA",
+     "MIN",
+     "PHL",
+     "LAC",
+     "NYG",
+     "KC"
+    ],
+    "SNL": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "HOU",
+     "LV",
+     "GB",
+     "PHL",
+     "LAC",
+     "NYG",
+     "DEN"
+    ],
+    "JMM": [
+     "NE",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "ATL",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "WAS",
+     "AZ",
+     "NYG",
+     "DEN"
+    ],
+    "CJA": [
+     "SEA",
+     "LAR",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "PHL",
+     "LAC",
+     "DAL",
+     "KC"
+    ],
+    "ERB": [
+     "SEA",
+     "LAR",
+     "TB",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "MIA",
+     "GB",
+     "PHL",
+     "LAC",
+     "DAL",
+     "DEN"
+    ],
+    "HBL": [
+     "NE",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "IND",
+     "PIT",
+     "CHI",
+     "CLE",
+     "BUF",
+     "MIA",
+     "GB",
+     "PHL",
+     "LAC",
+     "NYG",
+     "DEN"
+    ],
+    "A&M": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "ATL",
+     "CAR",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "WAS",
+     "LAC",
+     "NYG",
+     "KC"
+    ],
+    "K&C": [
+     "SEA",
+     "LAR",
+     "TB",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "GB",
+     "PHL",
+     "LAC",
+     "NYG",
+     "DEN"
+    ],
+    "LMH": [
+     "SEA",
+     "SF",
+     "TB",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "PHL",
+     "LAC",
+     "DAL",
+     "DEN"
+    ],
+    "LVS": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "PHL",
+     "LAC",
+     "DAL",
+     "KC"
+    ],
+    "CMA": [
+     "SEA",
+     "LAR",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "ATL",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "PHL",
+     "LAC",
+     "DAL",
+     "DEN"
+    ],
+    "R&J": [
+     "SEA",
+     "LAR",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "HOU",
+     "LV",
+     "GB",
+     "PHL",
+     "LAC",
+     "DAL",
+     "KC"
+    ],
+    "T&J": [
+     "SEA",
+     "LAR",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CAR",
+     "JAX",
+     "BUF",
+     "LV",
+     "GB",
+     "PHL",
+     "LAC",
+     "DAL",
+     "KC"
+    ],
+    "CAK": [
+     "SEA",
+     "SF",
+     "CIN",
+     "DET",
+     "TEN",
+     "IND",
+     "ATL",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "GB",
+     "WAS",
+     "LAC",
+     "DAL",
+     "KC"
+    ],
+    "GLJ": [
+     "SEA",
+     "LAR",
+     "CIN",
+     "DET",
+     "TEN",
+     "BAL",
+     "PIT",
+     "CHI",
+     "JAX",
+     "BUF",
+     "LV",
+     "MIN",
+     "PHL",
+     "LAC",
+     "DAL",
+     "KC"
+    ]
+   },
+   "mnf": {
+    "JJK": 44,
+    "KEF": 52,
+    "BAM": 51,
+    "EMH": 49,
+    "CBS": 49,
+    "JLS": 38,
+    "SNL": 45,
+    "JMM": 44,
+    "CJA": 54,
+    "ERB": 33,
+    "HBL": 38,
+    "A&M": 40,
+    "K&C": 49,
+    "LMH": 48,
+    "LVS": 45,
+    "CMA": 46,
+    "R&J": 47,
+    "T&J": 44,
+    "CAK": 42,
+    "GLJ": 43
+   },
+   "sf": {
+    "JJK": 350,
+    "KEF": 321,
+    "BAM": 389,
+    "EMH": 339,
+    "CBS": 345,
+    "JLS": 392,
+    "SNL": 362,
+    "JMM": 398,
+    "CJA": 354,
+    "ERB": 365,
+    "HBL": 301,
+    "A&M": 300,
+    "K&C": 319,
+    "LMH": 364,
+    "LVS": 314,
+    "CMA": 333,
+    "R&J": 333,
+    "T&J": 274,
+    "CAK": 300,
+    "GLJ": 350
+   }
+  },
+  "2": {
+   "label": "Week 2",
+   "games": [
+    "DET @ BUF",
+    "CAR @ ATL",
+    "NO @ BAL",
+    "MIN @ CHI",
+    "CIN @ HOU",
+    "PIT @ NE",
+    "GB @ NYJ",
+    "CLE @ TB",
+    "PHL @ TEN",
+    "JAX @ DEN",
+    "LV @ LAC",
+    "SEA @ AZ",
+    "WAS @ DAL",
+    "MIA @ SF",
+    "IND @ KC",
+    "NYG @ LAR"
+   ],
+   "entries": [
+    "JJK",
+    "KEF",
+    "BAM",
+    "EMH",
+    "CBS",
+    "JLS",
+    "SNL",
+    "JMM",
+    "CJA",
+    "ERB",
+    "HBL",
+    "A&M",
+    "K&C",
+    "LMH",
+    "LVS",
+    "CMA",
+    "R&J",
+    "T&J",
+    "CAK",
+    "GLJ"
+   ],
+   "picks": {
+    "JJK": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "PIT",
+     "GB",
+     "TB",
+     "PHL",
+     "DEN",
+     "LAC",
+     "AZ",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "KEF": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "PIT",
+     "NYJ",
+     "TB",
+     "TEN",
+     "DEN",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "BAM": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "JAX",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "NYG"
+    ],
+    "EMH": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "NYJ",
+     "TB",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "CBS": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "MIN",
+     "HOU",
+     "NE",
+     "GB",
+     "CLE",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "JLS": [
+     "DET",
+     "ATL",
+     "BAL",
+     "MIN",
+     "HOU",
+     "PIT",
+     "GB",
+     "TB",
+     "PHL",
+     "JAX",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "SNL": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "CIN",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "JAX",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "IND",
+     "LAR"
+    ],
+    "JMM": [
+     "BUF",
+     "ATL",
+     "BAL",
+     "CHI",
+     "CIN",
+     "NE",
+     "GB",
+     "CLE",
+     "PHL",
+     "JAX",
+     "LAC",
+     "SEA",
+     "WAS",
+     "SF",
+     "IND",
+     "NYG"
+    ],
+    "CJA": [
+     "BUF",
+     "ATL",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "NYJ",
+     "TB",
+     "PHL",
+     "DEN",
+     "LV",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "ERB": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "MIN",
+     "HOU",
+     "NE",
+     "GB",
+     "CLE",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "HBL": [
+     "DET",
+     "CAR",
+     "BAL",
+     "CHI",
+     "CIN",
+     "PIT",
+     "GB",
+     "CLE",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "NYG"
+    ],
+    "A&M": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "CIN",
+     "NE",
+     "NYJ",
+     "TB",
+     "PHL",
+     "DEN",
+     "LV",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "K&C": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "DEN",
+     "LV",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "NYG"
+    ],
+    "LMH": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "JAX",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "LVS": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "CMA": [
+     "BUF",
+     "ATL",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "R&J": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "T&J": [
+     "BUF",
+     "ATL",
+     "BAL",
+     "CHI",
+     "HOU",
+     "NE",
+     "GB",
+     "TB",
+     "PHL",
+     "DEN",
+     "LAC",
+     "SEA",
+     "DAL",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "CAK": [
+     "BUF",
+     "ATL",
+     "BAL",
+     "CHI",
+     "HOU",
+     "PIT",
+     "GB",
+     "CLE",
+     "TEN",
+     "DEN",
+     "LV",
+     "SEA",
+     "WAS",
+     "SF",
+     "KC",
+     "LAR"
+    ],
+    "GLJ": [
+     "BUF",
+     "CAR",
+     "BAL",
+     "CHI",
+     "HOU",
+     "PIT",
+     "NYJ",
+     "TB",
+     "PHL",
+     "JAX",
+     "LV",
+     "AZ",
+     "DAL",
+     "SF",
+     "KC",
+     "NYG"
+    ]
+   },
+   "mnf": {
+    "JJK": 55,
+    "KEF": 52,
+    "BAM": 52,
+    "EMH": 51,
+    "CBS": 49,
+    "JLS": 45,
+    "SNL": 52,
+    "JMM": 44,
+    "CJA": 54,
+    "ERB": 35,
+    "HBL": 41,
+    "A&M": 45,
+    "K&C": 54,
+    "LMH": 52,
+    "LVS": 47,
+    "CMA": 45,
+    "R&J": 47,
+    "T&J": 48,
+    "CAK": 42,
+    "GLJ": 49
+   },
+   "sf": {
+    "JJK": 375,
+    "KEF": 347,
+    "BAM": 414,
+    "EMH": 413,
+    "CBS": 345,
+    "JLS": 398,
+    "SNL": 375,
+    "JMM": 390,
+    "CJA": 354,
+    "ERB": 331,
+    "HBL": 301,
+    "A&M": 370,
+    "K&C": 369,
+    "LMH": 464,
+    "LVS": 394,
+    "CMA": 433,
+    "R&J": 397,
+    "T&J": 392,
+    "CAK": 341,
+    "GLJ": 371
+   }
+  }
+ }
+};
+
+const NORM={PHI:'PHL',PHL:'PHL',ARI:'AZ',AZ:'AZ',LA:'LAR',LAR:'LAR',JAC:'JAX',JAX:'JAX',
+  WSH:'WAS',WAS:'WAS',GNB:'GB',KAN:'KC',NWE:'NE',NOR:'NO',SFO:'SF',TAM:'TB',LVR:'LV',OAK:'LV',SD:'LAC',STL:'LAR'};
+const N=v=>{const s=String(v==null?'':v).trim().toUpperCase();return NORM[s]||s;};
+
+const STORED={
+  1:{final:true,mnf:41,sf:379,
+     winners:{'NE @ SEA':'SEA','SF @ LAR':'SF','TB @ CIN':'CIN','NO @ DET':'DET','NYJ @ TEN':'NYJ',
+       'BAL @ IND':'BAL','ATL @ PIT':'PIT','CHI @ CAR':'CHI','CLE @ JAX':'JAX','BUF @ HOU':'BUF',
+       'MIA @ LV':'LV','GB @ MIN':'MIN','WAS @ PHL':'PHL','AZ @ LAC':'AZ','DAL @ NYG':'NYG','DEN @ KC':'KC'},
+     lines:{'DEN @ KC':'KC 31, DEN 10','SF @ LAR':'SF 27, LAR 7'}}
+};
+
+let DATA=null, RES=JSON.parse(JSON.stringify(STORED)), view=null, open={};
+const $=id=>document.getElementById(id);
+
+/* ---------------- boot ---------------- */
+(async function(){
+  try{ const r=await fetch('picks.json',{cache:'no-store'}); DATA = r.ok ? await r.json() : FALLBACK; }
+  catch(e){ DATA=FALLBACK; }
+  const ws=Object.keys(DATA.weeks).map(Number).sort((a,b)=>a-b);
+  view = ws[ws.length-1];
+  render(); poll(); setInterval(poll,30000);
+})();
+
+/* ---------------- live ---------------- */
+async function poll(){
+  if(!DATA) return;
+  const ws=Object.keys(DATA.weeks).map(Number).filter(n=>!(RES[n]&&RES[n].final));
+  let ok=false;
+  for(const n of ws){
+    try{
+      const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&dates=2026&week='+n);
+      if(!r.ok) continue;
+      const j=await r.json(), wk=DATA.weeks[n];
+      const winners={},prog={},lines={};let done=true,mnf=null,sf=null;
+      (j.events||[]).forEach(ev=>{
+        const c=(ev.competitions||[])[0]; if(!c) return;
+        const A=(c.competitors||[]).find(x=>x.homeAway==='away'),H=(c.competitors||[]).find(x=>x.homeAway==='home');
+        if(!A||!H) return;
+        const a=N(A.team.abbreviation),h=N(H.team.abbreviation);
+        const key=wk.games.find(g=>{const p=g.split('@').map(s=>N(s));return p[0]===a&&p[1]===h;});
+        if(!key) return;
+        const as=+A.score,hs=+H.score;
+        const fin=c.status&&c.status.type&&c.status.type.completed;
+        lines[key]=a+' '+as+', '+h+' '+hs;
+        if(fin){ winners[key]= as>hs?a:(hs>as?h:'TIE'); }
+        else { done=false; prog[key]={lead:as>hs?a:(hs>as?h:null),st:(c.status&&c.status.type&&c.status.type.shortDetail)||''}; }
+        if(key===wk.games[wk.games.length-1] && !isNaN(as+hs)) mnf=as+hs;
+      });
+      RES[n]=Object.assign({},RES[n]||{},{winners,prog,lines,final:done,mnf:mnf,sf:(RES[n]||{}).sf});
+      ok=true;
+    }catch(e){}
+  }
+  if(ok){ $('strapR').innerHTML='<span class="dot"></span>Live'; render(); }
+}
+
+/* ---------------- scoring ---------------- */
+function score(n){
+  const wk=DATA.weeks[n], r=RES[n]||{};
+  const win=r.winners||{}, prog=r.prog||{};
+  const decided=wk.games.filter(g=>win[g]).length;
+  const rows=wk.entries.map(nm=>{
+    let w=0,l=0,live=0;
+    const detail=wk.games.map((g,i)=>{
+      const p=N(wk.picks[nm][i]), res=win[g];
+      if(res){ const good = res==='TIE'||p===res; good?w++:l++; return {g,p,s:good?'w':'l'}; }
+      const pr=prog[g];
+      if(pr&&pr.lead&&pr.lead===p){ live++; return {g,p,s:'p'}; }
+      return {g,p,s:''};
+    });
+    return {nm,w,l,live,detail,ceiling:w+(wk.games.length-decided),
+      mnf:wk.mnf[nm], sf:wk.sf[nm]};
+  });
+  const floor=Math.max(...rows.map(x=>x.w));
+  rows.forEach(x=>x.out = decided>0 && x.ceiling<floor);
+  rows.sort((a,b)=>b.w-a.w||b.live-a.live||a.nm.localeCompare(b.nm));
+  return {rows,decided,total:wk.games.length};
+}
+function near(rows,key,actual){
+  if(actual==null) return null;
+  return rows.filter(r=>typeof r[key]==='number')
+    .map(r=>({nm:r.nm,v:r[key],d:Math.abs(r[key]-actual)}))
+    .sort((a,b)=>a.d-b.d);
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const ws=Object.keys(DATA.weeks).map(Number).sort((a,b)=>a-b);
+  $('nav').innerHTML = ws.map(n=>'<button data-v="'+n+'" aria-current="'+(view===n)+'">Wk '+n+'</button>').join('')
+    + '<button data-v="season" aria-current="'+(view==='season')+'">Season</button>';
+  $('nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    view = b.dataset.v==='season'?'season':+b.dataset.v; open={}; render();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  $('body').innerHTML = view==='season'?season():week(view);
+  $('body').querySelectorAll('details.row').forEach(d=>{
+    d.ontoggle = ()=>{ open[d.dataset.nm]=d.open; };
+  });
+}
+
+function week(n){
+  const wk=DATA.weeks[n], S=score(n), r=RES[n]||{};
+  $('strapL').textContent = wk.label + ' \u00b7 ' +
+    (S.decided===S.total ? 'Final' : S.decided ? S.decided+' of '+S.total+' final' : 'Not started');
+
+  const top=S.rows.length?S.rows[0].w:0;
+  let out='<h2>Standings</h2>';
+  out+= S.decided<S.total
+    ? '<p class="sub">'+(S.total-S.decided)+' games left. Faded entries can no longer catch the lead.</p>' : '';
+  out+='<div class="board">';
+  let rank=0,prev=null;
+  S.rows.forEach((x,i)=>{
+    if(x.w!==prev){ rank=i+1; prev=x.w; }
+    const isOpen = open[x.nm]?' open':'';
+    out+='<details class="row'+(x.w===top&&S.decided?' lead':'')+(x.out?' dead':'')+'" data-nm="'+x.nm+'"'+isOpen+'>'
+      +'<summary>'
+      +'<span class="rank">'+rank+'</span>'
+      +'<span class="nm">'+x.nm
+        + (x.w===top&&S.decided===S.total?'<span class="tag">Wins</span>':'')
+        + (x.out?'<span class="tag out">Out</span>':'')
+      +'</span>'
+      +(x.live?'<span class="live">+'+x.live+'</span>':'')
+      +'<span class="rec">'+x.w+'&ndash;'+x.l+'</span>'
+      +'<span class="caret">&#9656;</span>'
+      +'</summary>'
+      +'<div class="picks">'
+      + x.detail.map(d=>{
+          const mk = d.s==='w'?'W':d.s==='l'?'L':d.s==='p'?'\u2022':'&nbsp;';
+          return '<div class="pk '+d.s+'"><span class="mark">'+mk+'</span>'
+            +'<span class="t">'+d.p+'</span><span class="g">'+d.g+'</span></div>';
+        }).join('')
+      + '<div class="tbline">Monday points <b>'+(x.mnf==null?'&mdash;':x.mnf)
+        +'</b> &nbsp;&middot;&nbsp; 49ers yards <b>'+(x.sf==null?'&mdash;':x.sf)+'</b></div>'
+      +'</div></details>';
+  });
+  out+='</div>';
+
+  // tiebreakers
+  out+='<h2>Tiebreakers</h2>';
+  const mg=wk.games[wk.games.length-1];
+  out+=tb('Monday night points', mg, r.mnf, (r.lines||{})[mg], near(S.rows,'mnf',r.mnf));
+  const sg=wk.games.find(g=>g.split('@').map(s=>N(s)).indexOf('SF')>=0);
+  out+=tb('49ers total yards', sg||'49ers on bye', r.sf, sg?(r.lines||{})[sg]:null, near(S.rows,'sf',r.sf));
+  return out;
+}
+
+function tb(title,game,actual,line,list){
+  let o='<div class="tb"><div class="ttl">'+title+'</div><div class="gm">'+game+(line?' \u00b7 '+line:'')+'</div>';
+  o += actual==null
+    ? '<div class="big" style="color:var(--ink-3)">&mdash;<span>not yet played</span></div>'
+    : '<div class="big">'+actual+'</div>';
+  if(list&&list.length){
+    const best=list[0].d;
+    o+='<ol>'+list.slice(0,5).map(x=>'<li class="'+(x.d===best?'top':'')+'">'
+      +'<span class="n">'+x.nm+'</span><span class="v">'+x.v+'</span>'
+      +'<span class="d">off '+x.d+'</span></li>').join('')+'</ol>';
+  }
+  return o+'</div>';
+}
+
+function season(){
+  $('strapL').textContent='Season to date';
+  const ws=Object.keys(DATA.weeks).map(Number).sort((a,b)=>a-b);
+  const t={};
+  const add=(nm,k,v)=>{ (t[nm]=t[nm]||{w:0,l:0,won:0,pt:0})[k]+=v; };
+  let counted=0;
+  ws.forEach(n=>{
+    const S=score(n), r=RES[n]||{};
+    if(!S.decided) return;
+    counted++;
+    S.rows.forEach(x=>{ add(x.nm,'w',x.w); add(x.nm,'l',x.l); });
+    if(S.decided===S.total){
+      const top=Math.max(...S.rows.map(x=>x.w));
+      S.rows.filter(x=>x.w===top).forEach(x=>add(x.nm,'won',1));
+      [['mnf',r.mnf],['sf',r.sf]].forEach(([k,a])=>{
+        const L=near(S.rows,k,a); if(!L||!L.length) return;
+        const b=L[0].d; L.filter(x=>x.d===b).forEach(x=>add(x.nm,'pt',1));
+      });
+    }
+  });
+  const rows=Object.entries(t).map(([nm,v])=>({nm,...v})).sort((a,b)=>b.w-a.w||b.pt-a.pt);
+  if(!rows.length) return '<div class="empty">No completed weeks yet.</div>';
+  const top=rows[0].w;
+  let o='<h2>Season standings</h2><p class="sub">'+counted+' week'+(counted>1?'s':'')+' complete.</p>'
+    +'<table class="st"><thead><tr><th>Entry</th><th>Record</th><th>Weeks</th><th>Pts</th></tr></thead><tbody>';
+  rows.forEach(x=>{
+    o+='<tr class="'+(x.w===top?'lead':'')+'"><td>'+x.nm+'</td>'
+      +'<td class="big">'+x.w+'&ndash;'+x.l+'</td>'
+      +'<td>'+(x.won||'&mdash;')+'</td><td>'+(x.pt||'&mdash;')+'</td></tr>';
+  });
+  return o+'</tbody></table>';
+}
+</script>
+</body>
+</html>
