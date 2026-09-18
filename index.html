@@ -70,8 +70,8 @@
   h2{font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--ink2);
     text-transform:uppercase;margin:22px 0 9px}
   .board{display:flex;flex-direction:column;gap:5px}
-  .en{background:var(--card);border-radius:13px;border:2px solid transparent}
-  .en.top{border-color:var(--win)}
+  .en{background:var(--card);border-radius:13px;border:1px solid transparent}
+  .en.top{border-color:#7FC49B}
   .en.out{background:var(--card2)}
   .en > summary{
     display:flex;align-items:center;gap:12px;padding:11px 13px;min-height:44px;
@@ -81,17 +81,18 @@
   .rk{width:24px;flex:0 0 24px;text-align:right;font-size:15px;font-weight:700;color:var(--ink3)}
   .en.top .rk{color:var(--win);font-weight:800}
   .en.out .rk{color:var(--ink4)}
-  .id{flex:1;min-width:0}
-  .id .init{font-size:19px;font-weight:700;letter-spacing:-.01em}
+  .id{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+  .id .init{display:block;font-size:19px;font-weight:700;letter-spacing:-.01em}
   .en.out .id .init{color:var(--ink3)}
-  .pt{display:inline-block;font-size:12px;font-weight:800;color:var(--gold);
-    background:var(--gold-bg);border-radius:5px;padding:2px 7px;margin-top:4px}
-  .no{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--red);
-    border:1px solid var(--red-line);border-radius:5px;padding:2px 6px;margin-top:4px}
-  .fig{text-align:right}
-  .fig .r{font-size:23px;font-weight:800;letter-spacing:-.02em}
+  .tags{display:flex;flex-wrap:wrap;gap:5px}
+  .pt{display:block;font-size:12px;font-weight:800;color:var(--gold);
+    background:var(--gold-bg);border-radius:5px;padding:3px 7px;line-height:1.25}
+  .no{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--red);
+    border:1px solid var(--red-line);border-radius:5px;padding:3px 6px;line-height:1.25}
+  .fig{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+  .fig .r{display:block;font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
   .en.out .fig .r{color:var(--ink3)}
-  .fig .m{font-size:12px;font-weight:700;color:var(--ink3);margin-top:1px}
+  .fig .m{display:block;font-size:12px;font-weight:700;color:var(--ink3);line-height:1.15}
   .en.out .fig .m{color:var(--ink4)}
   .cv{width:14px;flex:0 0 14px;color:var(--ink4);font-size:13px}
   .en[open] .cv{transform:rotate(90deg)}
@@ -141,12 +142,19 @@
   .sn{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden}
   .sn th{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
     color:var(--ink2);text-align:right;padding:12px 8px;border-bottom:1px solid var(--line)}
-  .sn th:first-child{text-align:left;padding-left:14px}
+  .sn th:first-child{text-align:left}
   .sn td{padding:12px 8px;text-align:right;border-bottom:1px solid var(--line);font-size:16px;font-weight:600}
   .sn td:first-child{text-align:left;padding-left:14px;font-size:18px;font-weight:700}
   .sn td.r{font-size:19px;font-weight:800;letter-spacing:-.02em}
   .sn td.up{color:var(--win);font-weight:800}
-  .sn td.dn{color:var(--ink3)}
+  .sn td.flat{color:var(--ink3);font-weight:700}
+  .sn td.dn{color:#C0564E;font-weight:700}
+  .sn td.srk{text-align:right;font-size:15px;font-weight:700;color:var(--ink3);
+    padding-left:14px;padding-right:2px;width:30px}
+  .sn th.srk{text-align:right;padding-left:14px;padding-right:2px}
+  .sn td:first-child{padding-left:14px}
+  .sn td.nm{text-align:left;font-size:18px;font-weight:700;padding-left:10px}
+  .sn th.nm{text-align:left;padding-left:10px}
   .sn tr:last-child td{border-bottom:0}
   .pot{font-size:13px;color:var(--ink2);margin:10px 0 0;font-weight:600}
 
@@ -1130,7 +1138,7 @@ async function poll(){
         if(!key) return;
         const as=+A.score, hs=+H.score;
         const st=c.status&&c.status.type||{};
-        lines[key]=a+' '+as+', '+h+' '+hs;
+        if(st.completed||st.state==='in') lines[key]=a+' '+as+', '+h+' '+hs;
         if(st.completed){ winners[key]= as>hs?a:(hs>as?h:'TIE'); }
         else if(st.state==='in'){ done=false; anyLive=true;
           prog[key]={lead:as>hs?a:(hs>as?h:null),clock:st.shortDetail||'',line:lines[key]}; }
@@ -1160,7 +1168,8 @@ function score(n){
       mnf:wk.mnf[nm], sf:wk.sf[nm]};
   });
   const best=Math.max(...rows.map(x=>x.w));
-  rows.forEach(x=>x.out = decided>0 && x.max<best);
+  const running = decided>0 && decided<wk.games.length;
+  rows.forEach(x=>x.out = running && x.max<best);
   rows.sort((a,b)=>b.w-a.w||a.nm.localeCompare(b.nm));
 
   // single weekly winner: wins, then closest MNF points
@@ -1241,18 +1250,21 @@ function week(n){
   let rk=0,prev=null;
   S.rows.forEach((x,i)=>{
     if(x.w!==prev){ rk=i+1; prev=x.w; }
-    const isTop = S.champ ? x===S.champ.r : (S.decided>0 && x.w===S.best);
+    const soleLead = S.rows.filter(y=>y.w===S.best).length===1;
+    const isTop = S.champ ? x===S.champ.r : (S.decided>0 && soleLead && x.w===S.best);
     const p=pts[x.nm];
     o+='<details class="en'+(isTop?' top':'')+(x.out?' out':'')+'" data-nm="'+x.nm+'"'
       +(openRows[x.nm]?' open':'')+'>'
-      +'<summary><span class="rk">'+rk+'</span>'
-      +'<span class="id"><span class="init">'+x.nm+'</span>'
-        +(p?'<span class="pt">+1 '+p.join(' &amp; ')+'</span>':'')
-        +(x.out?'<span class="no">CAN\u2019T WIN</span>':'')
-      +'</span>'
-      +'<span class="fig"><span class="r">'+x.w+'&ndash;'+x.l+'</span>'
-        +(left>0?'<span class="m">max '+x.max+'</span>':'')+'</span>'
-      +'<span class="cv">&#9656;</span></summary>'
+      +'<summary><div class="rk">'+rk+'</div>'
+      +'<div class="id"><div class="init">'+x.nm+'</div>'
+        +((p||x.out)?'<div class="tags">'
+          +(p?'<div class="pt">+1 '+p.join(' &amp; ')+'</div>':'')
+          +(x.out?'<div class="no">CAN\u2019T WIN</div>':'')
+          +'</div>':'')
+      +'</div>'
+      +'<div class="fig"><div class="r">'+x.w+'&ndash;'+x.l+'</div>'
+        +(left>0?'<div class="m">max '+x.max+'</div>':'')+'</div>'
+      +'<div class="cv">&#9656;</div></summary>'
       +'<div class="det">'
       + x.detail.map(d=>'<div class="pk '+d.s+'"><span class="mk">'
           +(d.s==='w'?'W':d.s==='l'?'L':'&middot;')+'</span>'
@@ -1322,12 +1334,18 @@ function season(){
     +'<span>Leader <b>'+leader.nm+'</b></span>';
 
   let o='<h2>Season standings</h2>'
-    +'<table class="sn"><thead><tr><th>Entry</th><th>Record</th><th>Won</th><th>Pts</th><th>Money</th></tr></thead><tbody>';
-  rows.forEach(x=>{
-    o+='<tr><td>'+x.nm+'</td><td class="r">'+x.w+'&ndash;'+x.l+'</td>'
+    +'<table class="sn"><thead><tr><th class="srk">#</th><th class="nm">Entry</th>'
+    +'<th>Record</th><th>Won</th><th>Pts</th><th>Money</th></tr></thead><tbody>';
+  let srk=0, sprev=null;
+  rows.forEach((x,i)=>{
+    const key=x.money+'|'+x.w;
+    if(key!==sprev){ srk=i+1; sprev=key; }
+    const cls = x.money>0?'up':(x.money===0?'flat':'dn');
+    const amt = x.money>0?'+$'+x.money:(x.money===0?'$0':'\u2212$'+Math.abs(x.money));
+    o+='<tr><td class="srk">'+srk+'</td><td class="nm">'+x.nm+'</td>'
+      +'<td class="r">'+x.w+'&ndash;'+x.l+'</td>'
       +'<td>'+(x.won||'&mdash;')+'</td><td>'+(x.pt||'&mdash;')+'</td>'
-      +'<td class="'+(x.money>0?'up':'dn')+'">'
-        +(x.money>0?'+$'+x.money:'\u2212$'+Math.abs(x.money))+'</td></tr>';
+      +'<td class="'+cls+'">'+amt+'</td></tr>';
   });
   o+='</tbody></table>';
   o+='<p class="pot">Everyone starts at &minus;$'+BUYIN+'. Each week won adds $'+PRIZE
