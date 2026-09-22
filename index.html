@@ -1171,7 +1171,15 @@ function score(n){
   });
   const best=Math.max(...rows.map(x=>x.w));
   const running = decided>0 && decided<wk.games.length;
-  rows.forEach(x=>x.out = running && x.max<best);
+  // Best case for X: every undecided game goes X's way. Anyone who shares X's pick
+  // in a game gains with X, so only disagreements can close a gap.
+  const rem = wk.games.map((g,i)=>win[g]?-1:i).filter(i=>i>=0);
+  rows.forEach(x=>{
+    if(!running){ x.out=false; return; }
+    const xf = x.w + rem.length;
+    x.out = rows.some(y=> y!==x &&
+      y.w + rem.filter(i=>y.detail[i].p===x.detail[i].p).length > xf);
+  });
   rows.sort((a,b)=>b.w-a.w||a.nm.localeCompare(b.nm));
 
   // single weekly winner: wins, then closest MNF points
