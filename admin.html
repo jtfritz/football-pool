@@ -70,6 +70,23 @@
   .bar button[disabled]{background:var(--ink3);border-color:var(--ink3);cursor:not-allowed}
   button:focus-visible,input:focus-visible,.drop:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   .empty{padding:36px 10px;text-align:center;color:var(--ink3)}
+  .bar button.alt{background:transparent;color:var(--ink);border-color:var(--ink)}
+  .bar button.alt[disabled]{color:var(--ink3);border-color:var(--ink3);background:transparent}
+  .sheet{position:fixed;inset:0;z-index:50;background:rgba(20,20,18,.45);
+    display:flex;align-items:center;justify-content:center;padding:18px}
+  .sheetin{background:var(--card);border:1px solid var(--rule);max-width:460px;width:100%;
+    padding:22px}
+  .sheetin h3{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;
+    text-transform:uppercase;margin:0 0 12px}
+  .sheetin p{font-size:15px;color:var(--ink2);margin:0 0 12px;line-height:1.5}
+  .sheetin p b{color:var(--ink)}
+  .sheetin input{width:100%;font:inherit;font-size:16px;padding:12px;
+    border:1px solid var(--rule);background:var(--card);margin-bottom:14px}
+  .sheetbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .sheetbtns button{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;
+    letter-spacing:.05em;text-transform:uppercase;padding:12px 18px;min-height:48px;
+    cursor:pointer;background:var(--ink);color:#fff;border:2px solid var(--ink)}
+  .sheetbtns button.alt{background:transparent;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -85,19 +102,60 @@
   </div>
   <input type="file" id="file" accept=".xlsx,.xls">
 
+  <div class="note" id="seed" style="border-left-color:var(--ok)">Checking for the existing season file&hellip;</div>
   <div id="out"><div class="empty">No sheet loaded.</div></div>
 </div>
 
 <div class="bar"><div class="in">
   <span class="msg" id="msg">Waiting for a sheet.</span>
-  <button id="exp" disabled>Export picks.json</button>
+  <span style="display:flex;gap:8px">
+    <button id="pub" disabled>Publish</button>
+    <button id="exp" disabled class="alt">Download</button>
+  </span>
 </div></div>
+
+<div id="tokbox" class="sheet" hidden>
+  <div class="sheetin">
+    <h3>Connect to GitHub, once</h3>
+    <p>Publishing writes <b>picks.json</b> straight to
+      <b>jtfritz/football-pool</b>. You need a fine-grained token with
+      <b>Contents: Read and write</b> on that one repository. It is stored in this
+      browser only and never sent anywhere except GitHub.</p>
+    <p><a href="https://github.com/settings/personal-access-tokens/new" target="_blank"
+      rel="noopener">Create a token</a>. Set the expiry to the end of the season.</p>
+    <input type="password" id="tok" placeholder="github_pat_..." autocomplete="off">
+    <div class="sheetbtns">
+      <button id="toksave">Save token</button>
+      <button id="tokcancel" class="alt">Cancel</button>
+      <button id="tokclear" class="alt">Forget it</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* Only case and whitespace are silent. Everything else asks. */
 const clean = v => String(v==null?'':v).trim().toUpperCase().replace(/\s+/g,'');
 
 let wk=null;        // {n,label,games,entries,picks,mnf,sf}
+let base={season:'2026-27',weeks:{}};   // existing season, seeded from picks.json
+(async function(){
+  try{
+    const r=await fetch('picks.json',{cache:'no-store'});
+    if(r.ok){ base=await r.json(); seeded(); }
+  }catch(e){}
+  try{
+    const s=localStorage.getItem('pool');
+    if(s){ const l=JSON.parse(s); Object.assign(base.weeks, l.weeks||{}); seeded(); }
+  }catch(e){}
+})();
+function seeded(){
+  const have=Object.keys(base.weeks||{}).map(Number).sort((a,b)=>a-b);
+  const el=document.getElementById('seed');
+  if(el) el.textContent = have.length
+    ? 'Season file loaded: week'+(have.length>1?'s':'')+' '+have.join(', ')+'. Your export will keep '
+      +(have.length>1?'them':'it')+' and add the week you drop below.'
+    : 'No existing season file found. Your export will contain only the week you drop below.';
+}
 let flags=[];       // {type,...,resolved}
 const $=id=>document.getElementById(id);
 
@@ -234,19 +292,78 @@ function render(){
     ? pend.length+' item'+(pend.length>1?'s':'')+' still need you'
     : wk.label+' is ready to export';
   $('exp').disabled = pend.length>0;
+  $('pub').disabled = pend.length>0;
 }
 
-$('exp').onclick=()=>{
-  let base={season:'2026-27',weeks:{}};
-  try{ const s=localStorage.getItem('pool'); if(s) base=JSON.parse(s); }catch(e){}
+const REPO='jtfritz/football-pool', FILE='picks.json', BRANCH='main';
+const tokenGet=()=>{ try{ return localStorage.getItem('ghtok')||''; }catch(e){ return ''; } };
+
+function merge(){
   base.weeks[wk.n]={label:wk.label,games:wk.games,entries:wk.entries,
     picks:wk.picks,mnf:wk.mnf,sf:wk.sf};
   try{ localStorage.setItem('pool',JSON.stringify(base)); }catch(e){}
-  const blob=new Blob([JSON.stringify(base,null,1)],{type:'application/json'});
+  return JSON.stringify(base,null,1);
+}
+
+$('exp').onclick=()=>{
+  const blob=new Blob([merge()],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download='picks.json'; a.click();
   URL.revokeObjectURL(a.href);
-  $('msg').textContent='Exported. Commit picks.json to the repo.';
+  const n=Object.keys(base.weeks).length;
+  $('msg').textContent='Downloaded '+n+' week'+(n>1?'s':'')+'. Upload it to the repo.';
+  seeded();
+};
+
+$('pub').onclick=async ()=>{
+  const t=tokenGet();
+  if(!t){ $('tokbox').hidden=false; return; }
+  const body=merge();
+  $('pub').disabled=true; $('msg').textContent='Publishing\u2026';
+  const api='https://api.github.com/repos/'+REPO+'/contents/'+FILE;
+  const head={Authorization:'Bearer '+t, Accept:'application/vnd.github+json',
+    'X-GitHub-Api-Version':'2022-11-28'};
+  try{
+    // current sha, so we replace rather than collide
+    let sha=null;
+    const cur=await fetch(api+'?ref='+BRANCH,{headers:head});
+    if(cur.status===401||cur.status===403){
+      $('msg').textContent='GitHub rejected the token. Check its scope, then try again.';
+      $('tokbox').hidden=false; $('pub').disabled=false; return;
+    }
+    if(cur.ok){ sha=(await cur.json()).sha; }
+
+    const enc=btoa(String.fromCharCode(...new TextEncoder().encode(body)));
+    const put=await fetch(api,{method:'PUT',headers:head,body:JSON.stringify({
+      message:'Add '+wk.label+' picks', content:enc, branch:BRANCH,
+      ...(sha?{sha:sha}:{})
+    })});
+    if(!put.ok){
+      const e=await put.json().catch(()=>({}));
+      $('msg').textContent='Publish failed: '+(e.message||put.status)+'. Use Download instead.';
+      $('pub').disabled=false; return;
+    }
+    const n=Object.keys(base.weeks).length;
+    $('msg').textContent='Published '+n+' week'+(n>1?'s':'')+'. The site updates in about a minute.';
+    seeded();
+  }catch(err){
+    $('msg').textContent='Could not reach GitHub. Use Download instead.';
+    $('pub').disabled=false;
+  }
+};
+
+$('toksave').onclick=()=>{
+  const v=$('tok').value.trim();
+  if(!v) return;
+  try{ localStorage.setItem('ghtok',v); }catch(e){}
+  $('tok').value=''; $('tokbox').hidden=true;
+  $('msg').textContent='Token saved. Hit Publish again.';
+};
+$('tokcancel').onclick=()=>{ $('tok').value=''; $('tokbox').hidden=true; };
+$('tokclear').onclick=()=>{
+  try{ localStorage.removeItem('ghtok'); }catch(e){}
+  $('tok').value=''; $('tokbox').hidden=true;
+  $('msg').textContent='Token removed from this browser.';
 };
 </script>
 </body>
