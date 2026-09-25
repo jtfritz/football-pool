@@ -73,7 +73,9 @@
   .bar button.alt{background:transparent;color:var(--ink);border-color:var(--ink)}
   .bar button.alt[disabled]{color:var(--ink3);border-color:var(--ink3);background:transparent}
   .sheet{position:fixed;inset:0;z-index:50;background:rgba(20,20,18,.45);
-    display:flex;align-items:center;justify-content:center;padding:18px}
+    display:none;align-items:center;justify-content:center;padding:18px}
+  .sheet.on{display:flex}
+  .sheet[hidden]{display:none!important}
   .sheetin{background:var(--card);border:1px solid var(--rule);max-width:460px;width:100%;
     padding:22px}
   .sheetin h3{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;
@@ -114,7 +116,7 @@
   </span>
 </div></div>
 
-<div id="tokbox" class="sheet" hidden>
+<div id="tokbox" class="sheet" hidden style="display:none">
   <div class="sheetin">
     <h3>Connect to GitHub, once</h3>
     <p>Publishing writes <b>picks.json</b> straight to
@@ -295,6 +297,12 @@ function render(){
   $('pub').disabled = pend.length>0;
 }
 
+function sheet(on){
+  const el=$('tokbox');
+  el.hidden=!on;
+  el.classList.toggle('on',on);
+  el.style.display = on ? 'flex' : 'none';
+}
 const REPO='jtfritz/football-pool', FILE='picks.json', BRANCH='main';
 const tokenGet=()=>{ try{ return localStorage.getItem('ghtok')||''; }catch(e){ return ''; } };
 
@@ -317,7 +325,7 @@ $('exp').onclick=()=>{
 
 $('pub').onclick=async ()=>{
   const t=tokenGet();
-  if(!t){ $('tokbox').hidden=false; return; }
+  if(!t){ sheet(true); return; }
   const body=merge();
   $('pub').disabled=true; $('msg').textContent='Publishing\u2026';
   const api='https://api.github.com/repos/'+REPO+'/contents/'+FILE;
@@ -329,7 +337,7 @@ $('pub').onclick=async ()=>{
     const cur=await fetch(api+'?ref='+BRANCH,{headers:head});
     if(cur.status===401||cur.status===403){
       $('msg').textContent='GitHub rejected the token. Check its scope, then try again.';
-      $('tokbox').hidden=false; $('pub').disabled=false; return;
+      sheet(true); $('pub').disabled=false; return;
     }
     if(cur.ok){ sha=(await cur.json()).sha; }
 
@@ -356,13 +364,14 @@ $('toksave').onclick=()=>{
   const v=$('tok').value.trim();
   if(!v) return;
   try{ localStorage.setItem('ghtok',v); }catch(e){}
-  $('tok').value=''; $('tokbox').hidden=true;
-  $('msg').textContent='Token saved. Hit Publish again.';
+  $('tok').value=''; sheet(false);
+  $('msg').textContent='Token saved. Publishing now\u2026';
+  $('pub').click();
 };
-$('tokcancel').onclick=()=>{ $('tok').value=''; $('tokbox').hidden=true; };
+$('tokcancel').onclick=()=>{ $('tok').value=''; sheet(false); };
 $('tokclear').onclick=()=>{
   try{ localStorage.removeItem('ghtok'); }catch(e){}
-  $('tok').value=''; $('tokbox').hidden=true;
+  $('tok').value=''; sheet(false);
   $('msg').textContent='Token removed from this browser.';
 };
 </script>
